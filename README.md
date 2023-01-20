@@ -6,7 +6,8 @@ day-to-day management of Linux workstations.
 
 ## Getting started
 
-The first step is to load the workstation commands into the environment by typing this command at the prompt (when logged in as root):
+The first step is to load the workstation commands into the environment 
+by typing this command at the prompt (when logged in as root):
 
 ```bash
 source wstools.bash
@@ -15,9 +16,10 @@ source wstools.bash
 ## User creation commands
 
 ### newuser
-This command creates a new user. It can create both entirely local 
-users (i.e., system users known only on this computer) and users who 
-login using their netid/password as defined by Kerberos, AD, LDAP, etc. 
+
+This command creates a new user whose user id is known to the Identity Management
+systems. That is, the user's
+login uses their netid/password as defined by Kerberos, AD, LDAP, etc. 
 The syntax is straightforward:
 
 ```bash
@@ -32,13 +34,13 @@ newuser username
 - The uid associated with the netid is determined.
 - The user is created with the appropriate uid and primary group (`users`).
 - A home directory that is group readable is created.
-- If the username is not a valid netid, newuser creates a local user.
 
-If the username is a known netid, the user will be able to login with the SSO password
+The user will be able to login with the SSO password
 associated with the netid. If the username is a local user, a password must be assigned
 with the `passwd` command.
 
 ### newusers
+
 This command creates several users at once with calling newuser in a loop. The 
 syntax is similarly straightforward.
 
@@ -47,6 +49,7 @@ newusers username1 username2 username3 ...
 ```
 
 ### newusers_remote
+
 This command works like newusers, but the users are created on a specified
 workstation. The workstation name is given before the first user name:
 
@@ -63,6 +66,7 @@ newusers_remote all username1 username2 ...
 ```
 
 ### The list of workstations
+
 all reads an environment variable that is set at the top of the `wstools.bash` file:
 
 ```bash
@@ -71,6 +75,7 @@ export carols_computers="adam anna boyi cooper dirac elion \
 ```
 
 ## A full example
+
 Let's look at how this would work from adam using netids from an addition at the beginning of the Spring 2023 term.
 The student id was `cb9sy`. Login to `root@adam`. Source the `wstools.bash` file.
 
@@ -103,37 +108,6 @@ Note that it does no harm to add a user who already exists.
 Now, let's do the complete creation with a user known to exist on some 
 workstations and not others:
 
-```bash
-[adam(root):~]: newusers_remote all gflanagi
-User gflanagi found in LDAP with id uid=127584(gflanagi) gid=100(users) groups=100(users)
-gflanagi has been added.
-User gflanagi found in LDAP with id uid=127584(gflanagi) gid=1000(exx) groups=1000(exx)
-gflanagi has been added.
-User gflanagi found in LDAP with id uid=127584(gflanagi) gid=100(users) groups=100(users)
-gflanagi has been added.
-User gflanagi found in LDAP with id uid=127584(gflanagi) gid=100(users) groups=100(users)
-gflanagi has been added.
-User gflanagi found in LDAP with id uid=127584(gflanagi) gid=100(users) groups=100(users)
-gflanagi has been added.
-User gflanagi found in LDAP with id uid=127584(gflanagi) gid=100(users) groups=100(users)
-gflanagi has been added.
-ssh: connect to host franklin port 22: No route to host
-User gflanagi found in LDAP with id uid=127584(gflanagi) gid=100(users) groups=100(users)
-gflanagi has been added.
-User gflanagi found in LDAP with id uid=127584(gflanagi) gid=100(users) groups=100(users)
-gflanagi has been added.
-User gflanagi found in LDAP with id uid=127584(gflanagi) gid=1000(exx) groups=1000(exx)
-gflanagi has been added.
-ssh: Could not resolve hostname marie: Temporary failure in name resolution
-User gflanagi found in LDAP with id uid=127584(gflanagi) gid=100(users) groups=100(users)
-gflanagi has been added.
-User gflanagi found in LDAP with id uid=127584(gflanagi) gid=100(users) groups=100(users)
-gflanagi has been added.
-User gflanagi found in LDAP with id uid=127584(gflanagi) gid=100(users) groups=100(users)
-gflanagi has been added.
-User gflanagi found in LDAP with id uid=127584(gflanagi) gid=100(users) groups=100(users)
-gflanagi has been added.
-```
 
 Note that the script circumvented several common problems:
 
