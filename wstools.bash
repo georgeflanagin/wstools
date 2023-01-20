@@ -33,40 +33,27 @@ function newuser
 
     newuser="$1"
     newuserid=$(id $newuser 2>/dev/null)
-    user_in_LDAP=$?
 
     # add the user and send all output to the bitbucket.
 
-    if (( $user_in_LDAP )); then
-        useradd $newuser >/dev/null 2>&1
+    if [ -z "$newuserid" ]; then
+        echo "$newuser is not in LDAP, or is expired."
+        return
     else
         echo "User $newuser found in LDAP with id $newuserid"
         useradd $newuser -u $id >/dev/null 2>&1
+        result=$?
     fi
 
-    if (( $? == 9 )); then 
-        localuser=$(grep -q $newuser /etc/passwd)
-        if (( $localuser )); then
-            echo "$newuser is already a local user."
-        else
-            echo "$newuser is present in LDAP only."
-        fi
+    if [ -d "/home/$newuser" ]; then
+        # This would happen when we are re-activating a user.
+        echo "$newuser has a pre-existing home directory."
     else
-        echo "$newuser has been added."
+        # Create the home directory if it does not exist. The -p
+        # option prevents there being an error if the directory
+        # is already present.
+        mkdir -p /home/$newuser
     fi
-
-    # Assign the csh as the default if that's what you want,
-    # and sledgehammer the user's primary group to "users"
-    # no matter what the default is, nor what info is in LDAP.
-    if (( $localuser )); then
-        echo "Setting shell and primary group for $newuser"
-        usermod -s /bin/bash -g users $newuser
-    fi
-
-    # Create the home directory if it does not exist. The -p
-    # option prevents there being an error if the directory
-    # is already present.
-    mkdir -p /home/$newuser
 
     # This will fix a problem with reactivating users.
     chown -R $newuser:users /home/$newuser
