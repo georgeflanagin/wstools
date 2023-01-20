@@ -110,7 +110,11 @@ function newusers_remote
         ssh root@$host "source ~/wstools.bash && newusers $@"
     else 
         for host in $carols_computers; do
-            ssh root@$host "source ~/wstools.bash && newusers $@"
+            if [ $host == $(hostname) ]; then
+                newusers $@
+            else
+                ssh root@$host "source ~/wstools.bash && newusers $@"
+            fi
         done
     fi
 }
