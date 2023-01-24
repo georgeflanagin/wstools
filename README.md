@@ -7,7 +7,8 @@ day-to-day management of Linux workstations.
 ## Getting started
 
 The first step is to load the workstation commands into the environment 
-by typing this command at the prompt (when logged in as root):
+by typing this command at the prompt (when logged in as root) and running
+the bash shell.
 
 ```bash
 source wstools.bash
@@ -67,12 +68,24 @@ newusers_remote all username1 username2 ...
 
 ### The list of workstations
 
-all reads an environment variable that is set at the top of the `wstools.bash` file:
+`all` is not the name of a workstation! Instead, `all` substitutes the
+value of an environment variable named `$my_computers` that is set in 
+the login script. In `csh`, 
 
-```bash
-export carols_computers="adam anna boyi cooper dirac elion \
+```csh
+setenv my_computers "adam anna boyi cooper dirac elion \
    evan franklin hamilton irene justin marie mayer pople sarah thais " 
 ```
+
+or in `bash`
+
+```bash
+export my_computers="adam anna boyi cooper dirac elion \
+   evan franklin hamilton irene justin marie mayer pople sarah thais " 
+```
+
+In `wstools.bash` this environment variable is set only in cases
+where no previous value has been assigned.
 
 ## A full example
 
