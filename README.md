@@ -122,11 +122,14 @@ Now, let's do the complete creation with a user known to exist on some
 workstations and not others:
 
 
-Note that the script circumvented several common problems:
+Note also that the script circumvents (but reports) several common problems:
 
-- One of the workstations had a name that could not be found, and newusers_remote skipped over it with no complaints.
-- The host named franklin was offline. Rather than stalling out and hanging, newusers_remote gave up after 5 seconds. NOTE: this can be changed in the wstools.bash file.
--	On two workstations, gflanagi existed and was a member of another group (exx). The group information was updated.
+- If a workstation cannot be found (perhaps the name is misspelled?), `newusers_remote` 
+will move on to the next workstation after noting the error.
+- If a workstation is offline, newusers_remote will not hang. `newusers_remote` gives 
+up after 5 seconds. NOTE: this wait time can be changed in the `wstools.bash` file.
+- If a user already exists or has a home directory (ex: a user is being reactivated), 
+`newusers_remote` mentions this fact and moves on.
 
 ## Keeping wstools up to date
 
@@ -146,7 +149,7 @@ wstools update
 The tarball can be delivered to another computer with the `push` command. 
 
 ```bash
-wstools push justin
+wstools push newton
 ```
 
 And it can be pushed to all the workstations at once with the all variant.
