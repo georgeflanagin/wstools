@@ -2,7 +2,9 @@
 # Set the history time format 
 ###
 export HISTTIMEFORMAT="%y/%m/%d %T "
-export carols_computers="adam anna boyi cooper dirac elion evan franklin hamilton irene justin marie mayer pople sarah thais "
+if [[ ${my_computers:-"unset"} == "unset" ]]; then
+    export my_computers="adam anna boyi cooper dirac elion evan franklin hamilton irene justin marie mayer pople sarah thais "
+fi
 export LS_COLORS=$LS_COLORS:'di=0;35:'
 export PROMPT_COLOR=$YELLOW
 
@@ -87,7 +89,7 @@ function newusers_remote
     if [ -z $2 ]; then
         echo "Usage newusers_remote {host} {netid} [ netid [ netid .. ]]"
         echo " If the {host} is 'all', then the command will be executed"
-        echo ' on each host defined in $carols_computers'
+        echo ' on each host defined in $my_computers'
         return
     fi
 
@@ -96,7 +98,7 @@ function newusers_remote
     if [ $host != "all" ]; then
         ssh root@$host "source ~/wstools.bash && newusers $@"
     else 
-        for host in $carols_computers; do
+        for host in $my_computers; do
             echo "Adding users to $host."
             if [ $host == $(hostname) ]; then
                 newusers $@
@@ -545,14 +547,14 @@ function wstools
             if [ -z $2 ]; then
                 echo "Usage: wstools push {hostname}"
                 echo " If {hostname} is 'all', then the push will"
-                echo ' go to all hosts in $carols_computers.'
+                echo ' go to all hosts in $my_computers.'
             fi
 
             if [ $2 != "all" ]; then
                 scp wstools.tar root@$2:~/wstools.tar
                 ssh root@$2 "tar -xf wstools.tar"
             else
-                for host in $carols_computers; do
+                for host in $my_computers; do
                     scp wstools.tar root@$host:~/wstools.tar
                     ssh root@$host "tar -xf wstools.tar"
                 done
