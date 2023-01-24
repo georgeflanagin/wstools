@@ -97,6 +97,7 @@ function newusers_remote
         ssh root@$host "source ~/wstools.bash && newusers $@"
     else 
         for host in $carols_computers; do
+            echo "Adding users to $host."
             if [ $host == $(hostname) ]; then
                 newusers $@
             else
