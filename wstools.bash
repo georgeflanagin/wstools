@@ -20,6 +20,34 @@ alias vi=vim
 alias ssh="ssh -o ConnectTimeout=5 "
 alias scp="scp -o ConnectTimeout=5 "
 
+unalias on_all_computers 2>/dev/null
+function on_all_computers
+{
+    if [ -z $1 ]; then
+        echo "Usage: on_all_computers 'command'"
+        return
+    fi
+
+    for host in $my_computers; do 
+        echo $host
+        ssh root@$host "$1"
+    done
+}
+
+
+function to_all_computers
+{
+    if [ -z $1 ]; then
+        echo "Usage: to_all_computers {file-to-copy}"
+        return
+    fi
+
+    for host in $my_computers; do
+        echo $host
+        scp "$1" "root@$host:$1"
+    done
+}
+
 ###
 # This function creates a new user on Linux 6, 7, or 8, as
 # well as a /home directory for the user. The home directory
