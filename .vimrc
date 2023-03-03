@@ -26,8 +26,6 @@ if has("autocmd")
   au BufReadPost * if line("'\"") > 1 && line("'\"") <= line("$") | exe "normal! g'\"" | endif
 endif
 
-colorscheme distinguished
-
 augroup json_ft
   au!
   autocmd BufNewFile,BufRead *.json   set syntax=json
