@@ -2,7 +2,9 @@
 # Set the history time format 
 ###
 export HISTTIMEFORMAT="%y/%m/%d %T "
-export carols_computers="adam anna boyi cooper dirac elion evan franklin hamilton irene justin marie mayer pople sarah thais "
+if [[ ${my_computers:-"unset"} == "unset" ]]; then
+    export my_computers="adam anna boyi cooper dirac elion evan franklin hamilton irene justin marie mayer newton pople sarah thais "
+fi
 export LS_COLORS=$LS_COLORS:'di=0;35:'
 export PROMPT_COLOR=$YELLOW
 
@@ -17,6 +19,42 @@ alias vi=vim
 ###
 alias ssh="ssh -o ConnectTimeout=5 "
 alias scp="scp -o ConnectTimeout=5 "
+
+unalias hecho 2>/dev/null
+function hecho
+{
+    echo "$(hostname) :: $(date +%D-%H:%M:%S) :: $@"
+}
+
+
+
+unalias on_all_computers 2>/dev/null
+function on_all_computers
+{
+    if [ -z $1 ]; then
+        echo "Usage: on_all_computers 'command'"
+        return
+    fi
+
+    for host in $my_computers; do 
+        hecho $host
+        ssh root@$host "$1"
+    done
+}
+
+
+function to_all_computers
+{
+    if [ -z $1 ]; then
+        echo "Usage: to_all_computers {file-to-copy}"
+        return
+    fi
+
+    for host in $my_computers; do
+        hecho $host
+        scp "$1" "root@$host:$1"
+    done
+}
 
 ###
 # This function creates a new user on Linux 6, 7, or 8, as
@@ -37,17 +75,34 @@ function newuser
     # add the user and send all output to the bitbucket.
 
     if [ -z "$newuserid" ]; then
-        echo "$newuser is not in LDAP, or is expired."
+        hecho "$newuser is not in LDAP, or is expired."
         return
     else
-        echo "User $newuser found in LDAP with id $newuserid"
-        useradd $newuser -u $id >/dev/null 2>&1
+        ###
+        # The useradd command's request for /bin/csh will not have
+        # an effect in the current UR environment. However, we might
+        # make changes, and this will slightly raise the chances
+        # of continuing correct operation.
+        ###
+        hecho "User $newuser found in LDAP with id $newuserid"
+        useradd $newuser -u $id -s /bin/csh >/dev/null 2>&1
         result=$?
+        hecho "changing shell to csh"
+        ###
+        # Be cautious of adding a user twice, or changing the
+        # default shell of a user who is already present.
+        ###
+        if grep -q $newuser /etc/passwd; then
+            hecho "user already in /etc/passwd"
+        else
+            echo $(getent passwd $newuser) | sed 's/bash$/csh/' >> /etc/passwd
+            hecho "User info appended to /etc/passwd"
+        fi
     fi
 
     if [ -d "/home/$newuser" ]; then
         # This would happen when we are re-activating a user.
-        echo "$newuser has a pre-existing home directory."
+        hecho "$newuser has a pre-existing home directory."
     else
         # Create the home directory if it does not exist. The -p
         # option prevents there being an error if the directory
@@ -56,10 +111,12 @@ function newuser
     fi
 
     # This will fix a problem with reactivating users.
+    hecho "Resetting owner of any existing files in /home/$newuser"
     chown -R $newuser:users /home/$newuser
 
     # and add group read/execute with the setgid bit on.
-    chmod 2750 /home/$newuser
+    hecho "Setting gid bit on /home/$newuser"
+    chmod 2755 /home/$newuser
 }
 
 ###
@@ -87,7 +144,7 @@ function newusers_remote
     if [ -z $2 ]; then
         echo "Usage newusers_remote {host} {netid} [ netid [ netid .. ]]"
         echo " If the {host} is 'all', then the command will be executed"
-        echo ' on each host defined in $carols_computers'
+        echo ' on each host defined in $my_computers'
         return
     fi
 
@@ -96,8 +153,8 @@ function newusers_remote
     if [ $host != "all" ]; then
         ssh root@$host "source ~/wstools.bash && newusers $@"
     else 
-        for host in $carols_computers; do
-            echo "Adding users to $host."
+        for host in $my_computers; do
+            hecho "Adding users to $host."
             if [ $host == $(hostname) ]; then
                 newusers $@
             else
@@ -545,14 +602,15 @@ function wstools
             if [ -z $2 ]; then
                 echo "Usage: wstools push {hostname}"
                 echo " If {hostname} is 'all', then the push will"
-                echo ' go to all hosts in $carols_computers.'
+                echo ' go to all hosts in $my_computers.'
             fi
 
             if [ $2 != "all" ]; then
                 scp wstools.tar root@$2:~/wstools.tar
                 ssh root@$2 "tar -xf wstools.tar"
             else
-                for host in $carols_computers; do
+                for host in $my_computers; do
+                    hecho "moving wstools.tar to $host"
                     scp wstools.tar root@$host:~/wstools.tar
                     ssh root@$host "tar -xf wstools.tar"
                 done
