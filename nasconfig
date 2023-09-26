@@ -1,0 +1,16 @@
+Host newnas
+    Hostname 141.166.220.27
+
+Host truenas
+    HostName 141.166.185.173
+
+Host trueuser
+    Hostname 141.166.186.35
+
+Host *
+    User root
+    Port 22
+    IdentityFile ~/.ssh/id_rsa
+    IdentitiesOnly yes
+    Compression yes
+    ServerAliveInterval 59
