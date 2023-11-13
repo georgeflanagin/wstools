@@ -98,8 +98,18 @@ function update_bashrc
     export all_users=$(echo $(ls -1d /home/*) | sed 's!/home/!!g')
     for u in $all_users; do
         echo "Updating $u"
-        sudo cp -f ~/bashrc "/home/$u/.bashrc" 2>/dev/null
-        sudo chown "$u" "/home/$u/.bashrc" 2>/dev/null
+        sudo command cp -f ~/bashrc "/home/$u/.bashrc" 2>/dev/null
+        sudo command chown "$u" "/home/$u/.bashrc" 2>/dev/null
+    done
+}
+
+function update_bashprofile
+{
+    export all_users=$(echo $(ls -1d /home/*) | sed 's!/home/!!g')
+    for u in $all_users; do
+        echo "Updating $u"
+        sudo command cp -f ~/bash_profile "/home/$u/.bash_profile" 2>/dev/null
+        sudo command chown "$u" "/home/$u/.bash_profile" 2>/dev/null
     done
 }
 
@@ -695,7 +705,7 @@ function isinstalled
         return
     fi
 
-    rpm -qa "$1"\*
+    rpm -qa | grep "$1"
 }
 
 function latest
@@ -732,7 +742,7 @@ function wstools
     case $1 in
         update)
             source wstools.bash
-            tar -cf wstools.tar users nasconfig dailybackup.sh wstools.bash git.bash .cshrc bashrc bash.sh hosts install_cuda.sh
+            tar -cf wstools.tar users nasconfig dailybackup.sh wstools.bash git.bash .cshrc bashrc bash.sh hosts install_cuda.sh bash_profile
             ls -l wstools.tar
             ;;
 
