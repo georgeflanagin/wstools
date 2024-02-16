@@ -22,16 +22,68 @@ export all_users=$(ls -1d /home/* | sed 's!/home/!!g' | tr '\n' ' ')
 function all_users_to_users
 {
     for u in $all_users; do
-        sudo usermod -a -G users $u
+        all_users_to_group users
     done
 }
 
-export my_computers="adam alexis anna boyi camryn cooper erica evan irene justin kevin michael sarah thais "
+function all_users_to_group
+{
+    if [ -z "$1" ]; then
+        echo "Usage all_users_to_group {groupname}"
+        return
+    fi
+
+    for u in $all_users; do 
+        echo "Adding $u to $1"
+        sudo usermod -a -G "$1" "$u"
+    done
+}
+
+export my_computers="adam alexis boyi camryn cooper erica evan hamilton irene justin kevin mayer michael sarah thais "
 export linux8="adam alexis boyi camryn erica evan irene justin kevin michael sarah"
-export linux7="anna cooper thais"
 
 # echo '$my_computers' is set to "$my_computers"
 # echo '$all_users' is set to "$all_users"
+export  LY="\[\033[1;33m\]"
+export  NO_COLOR="\[\e[0m\]"
+
+function myconfig
+{
+    r=$(head -2 /etc/os-release | tr '\n' ' ' | sed 's/ $//' | sed 's/NAME=//' | sed 's/ VERSION=/, version /')
+    g=$(lspci | grep VGA | grep NVIDIA | grep -v T400 | sed 's/.*NVIDIA/NVIDIA/' | tr '\n' '. ')
+    b="$(who -b | sed 's/ *system boot  //')."
+    h=$(hostname -s)
+    mem=$(head -1 /proc/meminfo | sed 's/MemTotal: *//')
+    cores=$(cat /proc/cpuinfo | grep -c siblings)
+    cpu=$(grep "model name" /proc/cpuinfo | head -1 | sed 's/^.*: //')
+    discs=$(lsblk | grep "^s.*disk" | awk '{print $1 " -> " $4}' | tr '\n' ',')
+
+    s1="This computer is $h. It was last booted on $b"
+    s2="The OS is $r."
+    s3="The CPU is an $cpu with $cores cores and $mem of memory."
+    s4="The disks are $discs and"
+    if [ -z "$g" ]; then
+        s5="this computer has no GPU."
+        s6=""
+    else
+        s5="this computer has (this|these) GPU[s]: $g"
+        s6="$(nvidia-smi --query-gpu=memory.total,memory.used,power.draw,temperature.gpu --format=csv,noheader)"
+    fi
+
+    eyes="bdgpstwy"
+    num_eyes=${#eyes}
+    idx=$((RANDOM % num_eyes))
+    e=${eyes:$idx:1}
+
+    cowsay -W 55 "-$e" "$s1  $s2  $s3  $s4 $s5"
+    if [ ! -z "$s6" ]; then
+        echo ""
+        echo " GPU INFO "
+        echo $s6
+    fi
+
+}
+
 
 function apc
 {
@@ -93,6 +145,7 @@ function update_cshrc
     done
 }
 
+
 function update_bashrc
 {
     export all_users=$(echo $(ls -1d /home/*) | sed 's!/home/!!g')
@@ -103,6 +156,17 @@ function update_bashrc
     done
 }
 
+function update_bash_profile
+{
+    export all_users=$(echo $(ls -1d /home/*) | sed 's!/home/!!g')
+    for u in $all_users; do
+        echo "Update bash_profile for $u"
+        sudo command cp -f /etc/skel/.bash_profile "/home/$u/.bash_profile" 2>/dev/null
+        sudo command chown "$u" "/home/$u/.bash_profile" 2>/dev/null
+    done
+}
+
+
 function update_bashprofile
 {
     export all_users=$(echo $(ls -1d /home/*) | sed 's!/home/!!g')
@@ -111,12 +175,6 @@ function update_bashprofile
         sudo command cp -f ~/bash_profile "/home/$u/.bash_profile" 2>/dev/null
         sudo command chown "$u" "/home/$u/.bash_profile" 2>/dev/null
     done
-}
-
-function remove_starred_users
-{
-    cp -f /etc/passwd /etc/passwd.old
-    sed -i '/:\*:/d' /etc/passwd
 }
 
 function reset_gpu_driver
@@ -298,7 +356,7 @@ function newuser
         # of continuing correct operation.
         ###
         echo "User $newuser found in LDAP with id $newuserid"
-        useradd $newuser -u $id >/dev/null 2>&1
+        useradd -m $newuser -u $id >/dev/null 2>&1
     fi
 
     if [ -d "/home/$newuser" ]; then
@@ -328,7 +386,18 @@ function newuser
     chmod 2755 /home/$newuser
 
     usermod -a -G users $newuser
+    usermod -a -G nogroup $newuser
 
+}
+
+function freshen_login_files
+{
+    newuser="$1"
+    cp -f /root/.cshrc /home/$newuser
+    chown $newuser /home/$newuser/.cshrc 
+
+    cp -f /root/bashrc /home/$newuser/.bashrc
+    chown $newuser /home/$newuser/.bashrc
 }
 
 ###
@@ -609,7 +678,7 @@ function hogs
 unalias be 2>/dev/null
 function be
 {
-    sudo -u $1 bash
+    sudo su - $1
 }
 
 # >>>>>>>>>>>>>>>>>>
@@ -741,9 +810,18 @@ function wstools
 
     case $1 in
         update)
+	    cd ~/wstools
             source wstools.bash
-            tar -cf wstools.tar users nasconfig dailybackup.sh wstools.bash git.bash .cshrc bashrc bash.sh hosts install_cuda.sh bash_profile
+            tar -cf wstools.tar users *config \
+                dailybackup.sh wstools.bash git.bash \
+                .cshrc bashrc bash.sh hosts install_cuda.sh \
+                bash_profile *.conf \
+                simple_cuda_*txt apcupsd.conf
             ls -l wstools.tar
+            echo " "
+            echo "Contents of wstools.tar:"
+            echo " "
+            tar -tf wstools.tar
             ;;
 
         push)
@@ -754,6 +832,7 @@ function wstools
                 echo $my_computers
                 return
             fi
+	    cd ~/wstools
 
             if [ $2 != "all" ]; then
                 scp wstools.tar root@$2:~/wstools.tar
@@ -775,3 +854,5 @@ function wstools
              
     esac
 }
+
+myconfig
