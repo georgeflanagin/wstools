@@ -19,6 +19,14 @@ HOSTNAME=`hostname -s`
 # We are only interested in users who have a $HOME directory.
 export all_users=$(ls -1d /home/* | sed 's!/home/!!g' | tr '\n' ' ')
 
+function list_disks
+{
+    echo '---------------------------------------------'
+    echo $(hostname)
+    lsblk | grep "^sd. " | grep -v run/media
+    echo '============================================='
+}
+
 function all_users_to_users
 {
     for u in $all_users; do
@@ -79,7 +87,7 @@ function myconfig
     if [ ! -z "$s6" ]; then
         echo ""
         echo " GPU INFO "
-        echo $s6
+        echo "$s6"
     fi
 
 }
@@ -373,7 +381,9 @@ function newuser
 
         # and give the user a .bashrc file
         cp -f /root/bashrc /home/$newuser/.bashrc
+        cp -f /root/bash_profile /home/$newuser/.bash_profile
         chown $newuser /home/$newuser/.bashrc
+        chown $newuser /home/$newuser/.bash_profile
 
     fi
 
