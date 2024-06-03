@@ -456,6 +456,14 @@ function newusers_remote
 }
 
 
+unalias loginall 2>/dev/null
+function loginall
+{
+    for host in $my_computers; do
+        ssh "root@$host"
+    done
+}
+
 unalias perms 2>/dev/null
 function perms
 {
