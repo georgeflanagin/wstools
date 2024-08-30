@@ -47,8 +47,7 @@ function all_users_to_group
     done
 }
 
-export my_computers="adam alexis boyi camryn cooper erica evan hamilton justin kevin mayer michael sarah thais "
-export linux8="adam alexis boyi camryn erica evan irene justin kevin michael sarah"
+export my_computers="adam alexis boyi camryn cooper erica evan justin kevin mayer michael thais "
 
 # echo '$my_computers' is set to "$my_computers"
 # echo '$all_users' is set to "$all_users"
