@@ -1,5 +1,5 @@
 ###
-# Set the history time format 
+# Set the history time format
 ###
 ###
 # This is the place for the very few aliases.
@@ -41,13 +41,13 @@ function all_users_to_group
         return
     fi
 
-    for u in $all_users; do 
+    for u in $all_users; do
         echo "Adding $u to $1"
         sudo usermod -a -G "$1" "$u"
     done
 }
 
-export my_computers="adam alexis boyi camryn cooper erica evan justin kevin mayer michael thais "
+export my_computers="adam alexis boyi camryn cooper erica evan hamilton irene2 justin kevin mayer michael sarah thais "
 
 # echo '$my_computers' is set to "$my_computers"
 # echo '$all_users' is set to "$all_users"
@@ -131,7 +131,7 @@ function checkdiscs
     drives=$(ls -1 /dev/sd?)
     sudo touch "$HOSTNAME.disc.report.txt"
     sudo rm -f *.disc.report.txt*
-    for drive in $drives; do 
+    for drive in $drives; do
         sudo smartctl --format=brief --info --attributes $drive >> "$HOSTNAME.disc.report.txt" 2>/dev/null
     done
 }
@@ -147,7 +147,7 @@ function update_cshrc
     export all_users=$(echo $(ls -1d /home/*) | sed 's!/home/!!g')
     for u in $all_users; do
         echo "Updating $u"
-        sudo cp -f ~/.cshrc "/home/$u" 2>/dev/null 
+        sudo cp -f ~/.cshrc "/home/$u" 2>/dev/null
         sudo chown $u /home/$u/.cshrc 2>/dev/null
     done
 }
@@ -176,12 +176,9 @@ function update_bash_profile
 
 function update_bashprofile
 {
-    export all_users=$(echo $(ls -1d /home/*) | sed 's!/home/!!g')
-    for u in $all_users; do
-        echo "Updating $u"
-        sudo command cp -f ~/bash_profile "/home/$u/.bash_profile" 2>/dev/null
-        sudo command chown "$u" "/home/$u/.bash_profile" 2>/dev/null
-    done
+    echo "Updating $1"
+    sudo command cp -f ~/bash_profile "/home/$1/.bash_profile" 2>/dev/null
+    sudo command chown "$u" "/home/$1/.bash_profile" 2>/dev/null
 }
 
 function reset_gpu_driver
@@ -220,7 +217,7 @@ function on_all_computers
     fi
 
 
-    for host in $my_computers; do 
+    for host in $my_computers; do
         if [ $host != $(hostname -s) ]; then
             echo " "
             echo "-------------------------"
@@ -228,7 +225,7 @@ function on_all_computers
             ssh root@$host "source ~/wstools.bash && $1"
         fi
     done
-    echo "Done." 
+    echo "Done."
 }
 
 function weather
@@ -279,15 +276,15 @@ function copy2ws
     if [ -z $2 ]; then
         these_computers="$my_computers"
     else
-        shift 
+        shift
         these_computers="$@"
     fi
-        
+
     for h in $these_computers; do
         echo $h
-        if [ $(hostname -s) != $h ]; then 
+        if [ $(hostname -s) != $h ]; then
             rsync --timeout=3 -av "$dir_to_sync/" "root@$h:$dir_to_sync"
-            if [ ! $? ]; then 
+            if [ ! $? ]; then
                 echo "$h could not be reached for sync-ing"
             else
                 echo "$h:$1 updated."
@@ -317,15 +314,15 @@ function syncws
     if [ -z $2 ]; then
         these_computers="$my_computers"
     else
-        shift 
+        shift
         these_computers="$@"
     fi
-        
+
     for h in $these_computers; do
         echo $h
-        if [ $(hostname -s) != $h ]; then 
+        if [ $(hostname -s) != $h ]; then
             rsync --timeout=3 -av --delete "$dir_to_sync/" "root@$h:$dir_to_sync"
-            if [ ! $? ]; then 
+            if [ ! $? ]; then
                 echo "$h could not be reached for sync-ing"
             else
                 echo "$h:$1 updated."
@@ -376,7 +373,7 @@ function newuser
         mkdir -p /home/$newuser
         # and give the user a .cshrc file
         cp -f /root/.cshrc /home/$newuser
-        chown $newuser /home/$newuser/.cshrc 
+        chown $newuser /home/$newuser/.cshrc
 
         # and give the user a .bashrc file
         cp -f /root/bashrc /home/$newuser/.bashrc
@@ -403,7 +400,7 @@ function freshen_login_files
 {
     newuser="$1"
     cp -f /root/.cshrc /home/$newuser
-    chown $newuser /home/$newuser/.cshrc 
+    chown $newuser /home/$newuser/.cshrc
 
     cp -f /root/bashrc /home/$newuser/.bashrc
     chown $newuser /home/$newuser/.bashrc
@@ -418,7 +415,7 @@ function newusers
     if [ -z $1 ]; then
         echo "Usage newusers {netid} [netid [netid .. ]]"
         return
-    fi 
+    fi
     for u in $@; do
         newuser $u
     done
@@ -442,7 +439,7 @@ function newusers_remote
     shift
     if [ $host != "all" ]; then
         ssh root@$host "source ~/wstools.bash && newusers $@"
-    else 
+    else
         for host in $my_computers; do
             echo "Adding users to $host."
             if [ $host == $(hostname) ]; then
@@ -607,7 +604,7 @@ function cdd
     d_name=$(find . -type d -name "$1" 2>&1 | grep -v Permission | head -1)
     if [ -z $d_name ]; then
         d_name=$(find ~ -type d -name "$1" 2>&1 | grep -v Permission | head -1)
-    fi  
+    fi
     if [ -z $d_name ]; then
         echo "no directory here named $1"
         return
@@ -717,7 +714,7 @@ function delhere
 function pyaddhere
 {
     export PYTHONPATH="$PYTHONPATH":`pwd`
-    echo PYTHONPATH="$PYTHONPATH"   
+    echo PYTHONPATH="$PYTHONPATH"
 }
 
 function pydelhere
@@ -749,7 +746,7 @@ export config=~/.ssh/config
 
 whoisin()
 {
-    # Shell function to show users in a named group 
+    # Shell function to show users in a named group
     # and the date of the last activity.
     #
     #  Usage: whoisin [group]
@@ -765,11 +762,11 @@ whoisin()
         if [ -d "/home/$member" ]; then
             line=`date -r "/home/$member" +'%F %T'`
             echo $member $line >> $out
-        fi 
+        fi
     done
     cat $out | sort
     rm -f $out
-}    
+}
 
 function isrunning
 {
@@ -805,8 +802,8 @@ function blockip
         echo "Usage: blockip {host}"
         echo " NOTE: The change will be permanent and take effect immediately."
         return
-    fi 
- 
+    fi
+
     sudo firewall-cmd --permanent --add-rich-rule="rule family='ipv4' source address='$1' reject"
     sudo firewall-cmd --reload
 }
@@ -823,7 +820,7 @@ function wstools
     if [ -z $1 ]; then
         echo "Usage: wstools {update|push}"
         return
-    fi 
+    fi
 
     case $1 in
         update)
@@ -868,7 +865,7 @@ function wstools
         *)
             echo "$1 not [yet?] implemented."
             ;;
-             
+
     esac
 }
 
