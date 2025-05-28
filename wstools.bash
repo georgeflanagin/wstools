@@ -18,6 +18,99 @@ export HISTTIMEFORMAT="%y/%m/%d %T "
 HOSTNAME=`hostname -s`
 # We are only interested in users who have a $HOME directory.
 export all_users=$(ls -1d /home/* | sed 's!/home/!!g' | tr '\n' ' ')
+export all_nases="141.166.223.243 141.166.186.35 141.166.222.28"
+
+function userexists
+{
+    if [[ $# -ne 1 ]]; then
+        echo "Usage: userexists <username>" >&2
+        return 2
+    fi
+
+    local user="$1"
+
+    if ! getent passwd "$user" > /dev/null; then
+        echo "User '$user' does not exist"
+        false
+        return
+    fi
+
+    if grep -q "^$user:" /etc/passwd; then
+        echo "User '$user' exists (local)"
+    else
+        echo "User '$user' exists (LDAP)"
+    fi
+
+    true
+}
+
+function groupexists
+{
+    if [[ $# -ne 1 ]]; then
+        echo "Usage: groupexists <groupname>" >&2
+        return 2
+    fi
+
+    if getent group "$1" > /dev/null; then
+        if grep -q "^$1:" /etc/group; then
+            echo "Group '$1' exists (local)"
+        else
+            echo "Group '$1' exists (remote, e.g. LDAP)"
+        fi
+        true
+
+    else
+        echo "Group '$1' does not exist"
+        false
+    fi
+}
+
+function adduserkey
+{
+    if [ -z "$1" ]; then
+        cat<<EOF
+    Usage: adduserkey {user} {keyfile}
+
+    This will append the contents of keyfile to the
+    .ssh/authorized_keys file of the user. It will
+    create the user using the default profile if the
+    user does not exist.
+EOF
+    fi
+
+    if [ $(id -u) -ne 0 ]; then
+        echo "addkey must be run as root."
+        return
+    fi
+
+    user="$1"
+    keyfile="$2"
+    sshdir="/home/$user/.ssh"
+    authkeys="$sshdir/authorized_keys"
+
+    if [ ! userexists "$user" ]; then
+        useradd -m "$user"
+        echo "User $user added."
+    else
+        echo "User $user exists."
+    fi
+
+    if [ ! -d "/home/$user/.ssh" ]; then
+        echo "Creating ssh directory."
+        mkdir -p "$sshdir"
+        chmod 700 "$sshdir"
+        touch "$authkeys"
+        chmod 600 "$authkeys"
+        chown -R "$user" "$sshdir"
+    fi
+
+    if [ -e "$keyfile" ]; then
+        cat "$keyfile" >> "$authkeys"
+        echo "$keyfile appened to $authkeys"
+    else
+        "$keyfile not found"
+    fi
+}
 
 function list_disks
 {
@@ -47,7 +140,8 @@ function all_users_to_group
     done
 }
 
-export my_computers="adam alexis boyi camryn cooper erica evan hamilton irene2 justin kevin mayer michael sarah thais "
+export my_computers="aamy adam alexis boyi camryn cooper evan hamilton irene2 justin mayer michael sarah thais "
+export all_computers="$my_computers"
 
 # echo '$my_computers' is set to "$my_computers"
 # echo '$all_users' is set to "$all_users"
@@ -226,6 +320,18 @@ function on_all_computers
         fi
     done
     echo "Done."
+}
+
+function on_all_nases
+{
+    if [ -z $1 ]; then
+        echo 'Usage: on_all_nases "command"'
+        return
+    fi
+
+    for host in $all_nases; do
+        ssh root@$host "$1"
+    done
 }
 
 function weather
