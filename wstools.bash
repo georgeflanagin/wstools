@@ -935,7 +935,7 @@ function wstools
             tar -cf wstools.tar users *config \
                 dailybackup.sh wstools.bash git.bash \
                 .cshrc bashrc bash.sh hosts install_cuda.sh \
-                bash_profile *.conf \
+                bash_profile *.conf usersetup.sh \
                 simple_cuda_*txt apcupsd.conf
             ls -l wstools.tar
             echo " "
