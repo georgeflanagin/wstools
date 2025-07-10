@@ -502,6 +502,12 @@ function newuser
 
 }
 
+estimate_xfs_files()
+{
+    sudo xfs_db -c 'stat' "$(df --output=source "$1" | tail -1)" | awk '/icount/ {total=$3} /ifree/ {free=$3} END {printf "Approximate file count on %s: %d\n", "'"$1"'", total-free}';
+}
+
+
 function freshen_login_files
 {
     newuser="$1"
@@ -936,7 +942,8 @@ function wstools
                 dailybackup.sh wstools.bash git.bash \
                 .cshrc bashrc bash.sh hosts install_cuda.sh \
                 bash_profile *.conf usersetup.sh \
-                simple_cuda_*txt apcupsd.conf
+                simple_cuda_*txt apcupsd.conf upsdetect.sh \
+                usersetup.sh
             ls -l wstools.tar
             echo " "
             echo "Contents of wstools.tar:"

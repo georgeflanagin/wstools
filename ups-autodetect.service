@@ -1,0 +1,232 @@
+# File: /etc/systemd/system/ups-autodetect.service
+[Unit]
+Description=UPS Auto-Detection Service
+Documentation=man:systemd.service(5)
+After=network.target
+Before=graphical.target
+Wants=network.target
+
+# Conflict with individual UPS services to prevent conflicts
+Conflicts=apcupsd.service pwrstatd.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/bin/ups-autodetect.sh -v
+ExecReload=/usr/local/bin/ups-autodetect.sh -v
+TimeoutStartSec=120
+TimeoutStopSec=30
+
+# Restart policy
+Restart=on-failure
+RestartSec=10
+
+# Security settings
+User=root
+Group=root
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=ups-autodetect
+
+[Install]
+WantedBy=multi-user.target
+
+---
+
+# File: /etc/systemd/system/ups-autodetect.timer
+[Unit]
+Description=UPS Auto-Detection Timer
+Documentation=man:systemd.timer(5)
+Requires=ups-autodetect.service
+
+[Timer]
+# Run on boot (after 2 minutes to let system settle)
+OnBootSec=2min
+
+# Run every 30 minutes to handle UPS swaps
+OnUnitActiveSec=30min
+
+# Run immediately if we missed a scheduled run
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+
+---
+
+# Installation script: install-ups-autodetect.sh
+#!/bin/bash
+
+# UPS Auto-Detection Installation Script
+
+set -e
+
+SCRIPT_SOURCE="ups-autodetect.sh"
+SCRIPT_TARGET="/usr/local/bin/ups-autodetect.sh"
+SERVICE_FILE="/etc/systemd/system/ups-autodetect.service"
+TIMER_FILE="/etc/systemd/system/ups-autodetect.timer"
+
+echo "Installing UPS Auto-Detection System..."
+
+# Check if running as root
+if [[ $EUID -ne 0 ]]; then
+    echo "ERROR: This installation script must be run as root"
+    exit 1
+fi
+
+# Copy main script
+echo "Installing main script to $SCRIPT_TARGET..."
+cp "$SCRIPT_SOURCE" "$SCRIPT_TARGET"
+chmod +x "$SCRIPT_TARGET"
+
+# Create service file
+echo "Creating systemd service file..."
+cat > "$SERVICE_FILE" << 'EOF'
+[Unit]
+Description=UPS Auto-Detection Service
+Documentation=man:systemd.service(5)
+After=network.target
+Before=graphical.target
+Wants=network.target
+
+# Conflict with individual UPS services to prevent conflicts
+Conflicts=apcupsd.service pwrstatd.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/bin/ups-autodetect.sh -v
+ExecReload=/usr/local/bin/ups-autodetect.sh -v
+TimeoutStartSec=120
+TimeoutStopSec=30
+
+# Restart policy
+Restart=on-failure
+RestartSec=10
+
+# Security settings
+User=root
+Group=root
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=ups-autodetect
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+# Create timer file
+echo "Creating systemd timer file..."
+cat > "$TIMER_FILE" << 'EOF'
+[Unit]
+Description=UPS Auto-Detection Timer
+Documentation=man:systemd.timer(5)
+Requires=ups-autodetect.service
+
+[Timer]
+# Run on boot (after 2 minutes to let system settle)
+OnBootSec=2min
+
+# Run every 30 minutes to handle UPS swaps
+OnUnitActiveSec=30min
+
+# Run immediately if we missed a scheduled run
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+EOF
+
+# Disable conflicting services
+echo "Disabling conflicting UPS services..."
+systemctl disable apcupsd.service 2>/dev/null || true
+systemctl disable pwrstatd.service 2>/dev/null || true
+systemctl stop apcupsd.service 2>/dev/null || true
+systemctl stop pwrstatd.service 2>/dev/null || true
+
+# Reload systemd and enable our services
+echo "Reloading systemd and enabling services..."
+systemctl daemon-reload
+systemctl enable ups-autodetect.service
+systemctl enable ups-autodetect.timer
+
+echo ""
+echo "Installation complete!"
+echo ""
+echo "Usage:"
+echo "  Start detection now:     systemctl start ups-autodetect.service"
+echo "  Start timer:             systemctl start ups-autodetect.timer"
+echo "  Check status:            systemctl status ups-autodetect.service"
+echo "  View logs:               journalctl -u ups-autodetect.service -f"
+echo "  Manual run:              /usr/local/bin/ups-autodetect.sh -v"
+echo ""
+echo "The timer will run detection on boot and every 30 minutes."
+echo "To start immediately:"
+echo "  systemctl start ups-autodetect.timer"
+echo "  systemctl start ups-autodetect.service"
+
+---
+
+# Uninstall script: uninstall-ups-autodetect.sh
+#!/bin/bash
+
+# UPS Auto-Detection Uninstall Script
+
+set -e
+
+SCRIPT_TARGET="/usr/local/bin/ups-autodetect.sh"
+SERVICE_FILE="/etc/systemd/system/ups-autodetect.service"
+TIMER_FILE="/etc/systemd/system/ups-autodetect.timer"
+LOG_FILE="/var/log/ups-autodetect.log"
+LOCK_FILE="/var/run/ups-autodetect.lock"
+
+echo "Uninstalling UPS Auto-Detection System..."
+
+# Check if running as root
+if [[ $EUID -ne 0 ]]; then
+    echo "ERROR: This uninstall script must be run as root"
+    exit 1
+fi
+
+# Stop and disable services
+echo "Stopping and disabling services..."
+systemctl stop ups-autodetect.timer 2>/dev/null || true
+systemctl stop ups-autodetect.service 2>/dev/null || true
+systemctl disable ups-autodetect.timer 2>/dev/null || true
+systemctl disable ups-autodetect.service 2>/dev/null || true
+
+# Remove service files
+echo "Removing service files..."
+rm -f "$SERVICE_FILE"
+rm -f "$TIMER_FILE"
+
+# Remove script
+echo "Removing main script..."
+rm -f "$SCRIPT_TARGET"
+
+# Remove lock file
+echo "Removing lock file..."
+rm -f "$LOCK_FILE"
+
+# Reload systemd
+echo "Reloading systemd..."
+systemctl daemon-reload
+
+# Optionally remove log file
+read -p "Remove log file ($LOG_FILE)? [y/N]: " -n 1 -r
+echo
+if [[ $REPLY =~ ^[Yy]$ ]]; then
+    rm -f "$LOG_FILE"
+    echo "Log file removed."
+fi
+
+echo ""
+echo "Uninstall complete!"
+echo ""
+echo "Note: You may want to re-enable your preferred UPS service:"
+echo "  systemctl enable apcupsd.service"
+echo "  systemctl enable pwrstatd.service"
