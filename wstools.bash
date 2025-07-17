@@ -531,7 +531,7 @@ function newuser
 
 }
 
-estimate_xfs_files()
+function estimate_xfs_files
 {
     sudo xfs_db -c 'stat' "$(df --output=source "$1" | tail -1)" | awk '/icount/ {total=$3} /ifree/ {free=$3} END {printf "Approximate file count on %s: %d\n", "'"$1"'", total-free}';
 }
@@ -885,7 +885,7 @@ function libdelhere
 
 export config=~/.ssh/config
 
-whoisin()
+function whoisin
 {
     # Shell function to show users in a named group
     # and the date of the last activity.
