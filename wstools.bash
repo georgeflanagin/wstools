@@ -140,7 +140,36 @@ function all_users_to_group
     done
 }
 
-export my_computers="aamy adam alexis boyi camryn cooper evan hamilton irene2 josh justin khanh mayer michael sarah thais "
+function remount_all
+{
+    sudo mount -v -a -t nfs -o remount | grep -v ignored | grep -v grep
+    result=$?
+    if (( $result & 1 )); then
+        echo "Bad permissions or invocation"
+    fi
+    if (( $result & 2 )); then
+        echo "Hard error: out of memory, cannot fork, etc."
+    fi
+    if (( $result & 4 )); then
+        echo "Internal mounting error."
+    fi
+    if (( $result & 8 )); then
+        echo "You interrupted the process. Incomplete."
+    fi
+    if (( $result & 16 )); then
+        echo "Could not get a write lock on /etc/mtab"
+    fi
+    if (( $result & 32 )); then
+        echo "Total failure."
+    fi
+    if (( $result & 64 )); then
+        echo "At least one mount succeeded."
+    else
+        echo "Success!"
+    fi
+}
+
+export my_computers="aamy adam alexis boyi camryn cooper evan hamilton irene2 josh justin kevin khanh mayer michael sarah thais "
 export all_computers="$my_computers"
 
 # echo '$my_computers' is set to "$my_computers"
@@ -466,7 +495,7 @@ function newuser
         # of continuing correct operation.
         ###
         echo "User $newuser found in LDAP with id $newuserid"
-        useradd -m $newuser -u $id >/dev/null 2>&1
+        sudo useradd -m $newuser -u $id >/dev/null 2>&1
     fi
 
     if [ -d "/home/$newuser" ]; then
@@ -479,26 +508,26 @@ function newuser
         mkdir -p /home/$newuser
         # and give the user a .cshrc file
         cp -f /root/.cshrc /home/$newuser
-        chown $newuser /home/$newuser/.cshrc
+        sudo chown $newuser /home/$newuser/.cshrc
 
         # and give the user a .bashrc file
         cp -f /root/bashrc /home/$newuser/.bashrc
         cp -f /root/bash_profile /home/$newuser/.bash_profile
-        chown $newuser /home/$newuser/.bashrc
-        chown $newuser /home/$newuser/.bash_profile
+        sudo chown $newuser /home/$newuser/.bashrc
+        sudo chown $newuser /home/$newuser/.bash_profile
 
     fi
 
     # This will fix a problem with reactivating users.
     hecho "Resetting owner of any existing files in /home/$newuser"
-    chown -R $newuser:users /home/$newuser
+    sudo chown -R $newuser:users /home/$newuser
 
     # and add group read/execute with the setgid bit on.
     hecho "Setting gid bit on /home/$newuser"
-    chmod 2755 /home/$newuser
+    sudo chmod 2755 /home/$newuser
 
-    usermod -a -G users $newuser
-    usermod -a -G nogroup $newuser
+    sudo usermod -a -G users $newuser
+    sudo usermod -a -G nogroup $newuser
 
 }
 
@@ -581,7 +610,7 @@ function perms
         return
     fi
 
-    namei -l $(readlink -f $1)
+    sudo namei -l $(readlink -f $1)
 }
 
 unalias hg 2>/dev/null
@@ -764,14 +793,14 @@ function back
 unalias showsockets 2>/dev/null
 function showsockets
 {
-    ss -t | grep -v 127.0.0.1
+    sudo ss -t | grep -v 127.0.0.1
 }
 
 unalias showpipes 2>/dev/null
 function showpipes
 {
-    lsof | head -1
-    lsof | grep FIFO | grep -v grep | grep -v lsof
+    sudo lsof | head -1
+    sudo lsof | grep FIFO | grep -v grep | grep -v lsof
 }
 
 unalias tunnel 2>/dev/null
@@ -789,16 +818,16 @@ function tunnel
 unalias fixperms 2>/dev/null
 function fixperms
 {
-    chmod g+s $(pwd)
-    chmod -R go-rwx *
-    chmod -R -x+X *
+    sudo chmod g+s $(pwd)
+    sudo chmod -R go-rwx *
+    sudo chmod -R -x+X *
 }
 
 unalias hogs 2>/dev/null
 function hogs
 {
     d=${1:-$(pwd)}
-    nice command find $d -size +100M -exec ls -l {} \;
+    sudo nice command find $d -size +100M -exec ls -l {} \;
 }
 
 unalias be 2>/dev/null
@@ -844,7 +873,7 @@ function libaddhere
 
 function treee
 {
-    tree -D -F -p ${1-$PWD}
+    sudo tree -D -F -p ${1-$PWD}
 }
 
 function libdelhere
